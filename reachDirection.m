@@ -3,7 +3,7 @@
 
 % targets = [.52 .72 .55 .59 .53 .6 .65 .67 .69
 %            .32 .22 .27 .18 .21 .3 .26 .20 .34];
-delayStep = 30;
+delayStep = 20;
 space = 6;
 
 folder = 'Data/denovo_2day/';
@@ -54,7 +54,7 @@ for l = 1:Nsubj
         Nbad = 0;
         Ntrials = size(fnames,1)-1;
         for j = 1:Ntrials
-            [releaseTime,initDir,targRel,targAngle] = deal([]);
+            [releaseTime,initDir,targRel,targAngle,initTime,analysisTime] = deal([]);
             d = dlmread([path fnames(j).name],' ',6,0); % read data into d
             input = d(:,12); % get button press data as input
             
@@ -86,20 +86,38 @@ for l = 1:Nsubj
             trajRaw = d(:,7:8); % raw trajectory
             trajFilt = sgolayfilt(trajRaw,3,11); % savitzky-golay filtered trajectories
             vel = diff(trajFilt)./diff(time/1000); % compute velocity of movements
-
-            analysisTime = releaseTime(1:end-1)+delayStep;
             
             if length(releaseTime) ~= length(answer)
                 initDir = [];
                 targAngle = [];
-                error = [];
             else
+                for i = 1:length(releaseTime)-1
+                    found = 0;
+                    idx = 1;
+                    start = trajFilt(releaseTime(i),:);
+                    while found == 0
+                        next = trajFilt(releaseTime(i)+idx,:);
+                        relative = next-start;
+                        distance = sqrt(relative(1)^2 + relative(2)^2);
+                        if distance >= 0.01
+                            initTime = [initTime releaseTime(i)+idx];
+                            found = 1;
+                        end
+                        idx = idx+1;
+                    end
+                end
+                
+                % pick the desired analysistime
+%                 analysisTime = releaseTime(1:end-1)+delayStep; % delayStep after release time
+                analysisTime = initTime+delayStep; % delayStep after moving certain distance from release position
+                
                 for i = 1:length(analysisTime) % compute movement direction
                     initDir(i) = atan2(vel(analysisTime(i),2),vel(analysisTime(i),1));
                 end
                 
-                for i = 1:length(releaseTime)-1
-                    targRel(i,:) = trajFilt(releaseTime(i+1),:) - trajFilt(releaseTime(i),:); % relative position of next target
+                for i = 1:length(analysisTime)
+%                     targRel(i,:) = trajFilt(releaseTime(i+1),:) - trajFilt(releaseTime(i),:); % relative position of next target
+                    targRel(i,:) = targets(:,answer(i+1))' - trajFilt(analysisTime(i),:); % relative position of next target
                     targAngle(i) = atan2(targRel(i,2),targRel(i,1)); % relative angle of next target
                 end
                 

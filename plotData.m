@@ -19,9 +19,9 @@ for i = 1:2
     quiver(p.trajFilt{t}(p.analysisTime{t},1),...
         p.trajFilt{t}(p.analysisTime{t},2),...
         cos(p.initDir{t})',sin(p.initDir{t})',0.5,'LineWidth',2) % initial reach direction
-    quiver(p.trajFilt{t}(p.analysisTime{t},1),...
-        p.trajFilt{t}(p.analysisTime{t},2),...
-        cos(p.targAngle{t})',sin(p.targAngle{t})',0.5,'LineWidth',2) % direction of target that will be pressed
+%     quiver(p.trajFilt{t}(p.analysisTime{t},1),...
+%         p.trajFilt{t}(p.analysisTime{t},2),...
+%         cos(p.targAngle{t})',sin(p.targAngle{t})',0.5,'LineWidth',2) % direction of target that will be pressed
     plot(p.trajFilt{t}(:,1),p.trajFilt{t}(:,2),'k')
     plot(p.trajFilt{t}(p.press{t},1),p.trajFilt{t}(p.press{t},2),'r.','MarkerSize',15)
     axis([0.47 0.77 0.13 0.43])
@@ -96,38 +96,74 @@ for j = 1:length(groups)
     end
 end
 %% plots the smoothed kernel of the reach direction errors
+col = lines;
+col = col(1:7,:);
 figure(4); clf
 for j = 1:length(groups)
-    subplot(3,1,j); hold on
     [baseline_p2p,baseline_Corsi,bimanual_p2p,bimanual_Corsi] = deal([]);
     for i = 1:Nsubj(j)
         p = data.(groups{j}){i};
         baseline_p2p = [baseline_p2p d.(groups{j}){i}.initDir(1:30)*180/pi];
-        baseline_Corsi = [baseline_Corsi data.(groups{j}){i}.unimanual.error];
         bimanual_p2p = [bimanual_p2p d.(groups{j}){i}.initDir(31:end)*180/pi];
+        baseline_Corsi = [baseline_Corsi data.(groups{j}){i}.unimanual.error];
         bimanual_Corsi = [bimanual_Corsi data.(groups{j}){i}.bimanual.error];
+        
+        pd = fitdist(d.(groups{j}){i}.initDir(1:30)'*180/pi,'Normal');
+        fits.baseline_p2p{j}(i) = pd.sigma;
+        
+        pd = fitdist(d.(groups{j}){i}.initDir(31:end)'*180/pi,'Normal');
+        fits.bimanual_p2p{j}(i) = pd.sigma;
+        
+        pd = fitdist(data.(groups{j}){i}.unimanual.error','Normal');
+        fits.baseline_Corsi{j}(i) = pd.sigma;
+        
+        pd = fitdist(data.(groups{j}){i}.bimanual.error','Normal');
+        fits.bimanual_Corsi{j}(i) = pd.sigma;
     end
+    
+    subplot(1,4,1); hold on
     [f,xi] = ksdensity(baseline_p2p);
-    plot(xi,f,'Color',colors(1,:),'LineWidth',2);
-    [f,xi] = ksdensity(baseline_Corsi);
-    plot(xi,f,'Color',colors(2,:),'LineWidth',2);
-    [f,xi] = ksdensity(bimanual_p2p);
-    plot(xi,f,'Color',colors(3,:),'LineWidth',2);
-    [f,xi] = ksdensity(bimanual_Corsi);
-    plot(xi,f,'Color',colors(4,:),'LineWidth',2);
-    if j == 1
-        title('2-day')
-        legend({'Baseline (p2p)','Baseline (Corsi)','Bimanual (p2p)','Bimanual (Corsi)'})
-    elseif j == 2
-        title('5-day')
+    plot(xi,f,'Color',col(j,:),'LineWidth',2);
+    if j == 3
+        axis([-90 90 0 0.06])
+        xticks(-90:45:90)
+        yticks(0:0.02:0.08)
+        title('Baseline (p2p)')
         ylabel('Probability density')
-    elseif j == 3
-        title('10-day')
-        xlabel('Reach direction error')
     end
-    axis([-90 90 0 0.055])
-    xticks(-90:30:90)
+    
+    subplot(1,4,2); hold on
+    [f,xi] = ksdensity(baseline_Corsi);
+    plot(xi,f,'Color',col(j,:),'LineWidth',2);
+    if j == 3
+        axis([-90 90 0 0.06])
+        xticks(-90:45:90)
+        yticks([])
+        title('Baseline (Corsi)')
+    end
+    
+    subplot(1,4,3); hold on
+    [f,xi] = ksdensity(bimanual_p2p);
+    plot(xi,f,'Color',col(j,:),'LineWidth',2);
+    if j == 3
+        axis([-90 90 0 0.06])
+        xticks(-90:45:90)
+        yticks([])
+        title('Bimanual (p2p)')
+    end
+    
+    subplot(1,4,4); hold on
+    [f,xi] = ksdensity(bimanual_Corsi);
+    plot(xi,f,'Color',col(j,:),'LineWidth',2);
+    if j == 3
+        axis([-90 90 0 0.06])
+        xticks(-90:45:90)
+        yticks([])
+        title('Bimanual (Corsi)')
+        legend({'2-day','5-day','10-day'})
+    end
 end
+
 %% plot movement times
 rng(1);
 col = lines;

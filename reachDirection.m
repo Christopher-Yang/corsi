@@ -5,7 +5,7 @@ delayStep = 20;
 space = 6;
 
 folder = 'Data/denovo_2day/';
-subj_name2 = {'subj1','subj2','subj3','subj4','subj5','subj6','subj7','subj8','subj9','subj10','subj11','subj12','subj13','subj14'};
+subj_name2 = {'subj1','subj3','subj4','subj5','subj6','subj7','subj8','subj9','subj10','subj11','subj12','subj13','subj14'};
 data.day2 = loadData(folder,subj_name2,delayStep);
 
 folder = 'Data/denovo_5day/';
